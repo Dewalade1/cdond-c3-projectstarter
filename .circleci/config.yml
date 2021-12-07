@@ -60,13 +60,15 @@ jobs:
       - checkout
       - restore_cache:
           keys: [backend-build]
+
       - run:
-          name: Back-end build
+          name: Backend build
           command: |
             # Your code here
             cd backend &&\
             npm i &&\
             npm run build
+
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
@@ -77,9 +79,24 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
+      - checkout
+
       # Restore from cache
+      - restore_cache:
+         keys: [frontend-test]
+
       # Your job code here
-      - run: exit 1
+      - run:
+          name: Run Frontend Test
+          command: |
+            # Your code here
+            cd frontend &&\
+            npm i &&\
+            npm run test
+      - run:
+          name: Frontend Test Failed
+          command: echo "[X] Failed to complete frontend test"
+          when: on_fail
                 
   test-backend:
     docker:
@@ -87,9 +104,25 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
+      - checkout
+
       # Restore from cache
+      - restore_cache:
+         keys: [backend-test]
+
       # Your job code here
-      - run: exit 1
+      - run:
+          name: Run Backend Test
+          command: |
+            # Your code here
+            cd backend &&\
+            npm i &&\
+            npm run test
+
+      - run:
+          name: Backend Test Failed
+          command: echo "[X] Failed to complete backend test"
+          when: on_fail
             
   scan-frontend:
     docker:
@@ -283,7 +316,7 @@ jobs:
               then
                 # your code here
               fi
-              
+
 
 workflows:
   default:
