@@ -130,9 +130,25 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
+      - checkout
+
       # Restore from cache
+      - restore_cache:
+         keys: [frontend-scan]
+
       # Your job code here
-      - run: exit 1
+      - run:
+          name: Run Frontend Scan
+          command: |
+            # Your code here
+            cd frontend &&\
+            npm i &&\
+            npm install oauth-sign@^0.9.0 &&\
+            npm audit --audit-level=critical
+      - run:
+          name: Frontend Scan Failed
+          command: echo "[X] Failed to complete frontend scan"
+          when: on_fail
 
   scan-backend:
     docker:
@@ -140,9 +156,25 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
+      - checkout
+
       # Restore from cache
+      - restore_cache:
+         keys: [backend-scan]
+
       # Your job code here
-      - run: exit 1
+      - run:
+          name: Run Backend Scan
+          command: |
+            # Your code here
+            cd backend &&\
+            npm i &&\
+            npm install oauth-sign@^0.9.0 &&\
+            npm audit --audit-level=critical
+      - run:
+          name: Backend Scan Failed
+          command: echo "[X] Failed to complete backend scan"
+          when: on_fail
 
   deploy-infrastructure:
     docker:
