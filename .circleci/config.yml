@@ -424,8 +424,7 @@ jobs:
           when: on_fail
 
       - destroy-environment
-      - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations
 
   deploy-frontend:
     docker:
@@ -478,8 +477,7 @@ jobs:
           when: on_fail
 
       - destroy-environment
-      - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations
 
   deploy-backend:
     docker:
@@ -530,8 +528,7 @@ jobs:
           when: on_fail
 
       - destroy-environment
-      - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations
 
   smoke-test:
     docker:
@@ -612,8 +609,7 @@ jobs:
           when: on_fail
 
       - destroy-environment
-      - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations
 
   cloudfront-update:
     docker:
@@ -649,8 +645,7 @@ jobs:
           when: on_fail
 
       - destroy-environment
-      - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations
 
   cleanup:
     docker:
