@@ -14,6 +14,30 @@ commands:
             # Your code here
             exit 1
 
+  fix_severe_security_vulnerabilities:
+    description: Fixes node modules with critical security vulnerabilities in the application
+    steps:
+      - run:
+          name: Fix security vulnerability
+          command: npm audit fix --audit-level=critical --force
+      - run:
+          name: Check if security vulnerability is fixed
+          command: npm audit --audit-level=critical
+      - run:
+          name: Some Security vulnerability fix failed
+          command: fix_all_security_vulnerabilities
+          when: on_fail
+
+  fix_all_security_vulnerabilities:
+    description: Fixes node modules with security vulnerabilities in the application
+    steps:
+      - run:
+          name: Fix security vulnerability
+          command: npm audit fix --force
+      - run:
+          name: Check if security vulnerability is fixed
+          command: npm audit --audit-level=critical
+
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     # parameters:
@@ -147,7 +171,13 @@ jobs:
             npm audit --audit-level=critical
       - run:
           name: Frontend Scan Failed
-          command: echo "[X] Failed to complete frontend scan"
+          command: |
+            echo "[X] frontend scan failed." &&\
+              echo "[X] attempting to fix security vulnerabilities"
+          when: on_fail
+      - run:
+          name: Fix severe security vulnerabilities
+          command: fix_severe_security_vulnerabilities
           when: on_fail
 
   scan-backend:
@@ -173,7 +203,13 @@ jobs:
             npm audit --audit-level=critical
       - run:
           name: Backend Scan Failed
-          command: echo "[X] Failed to complete backend scan"
+          command: |
+            echo "[X] backend scan failed." &&\
+              echo "[X] attempting to fix security vulnerabilities"
+          when: on_fail
+      - run:
+          name: Fix severe security vulnerabilities
+          command: fix_severe_security_vulnerabilities
           when: on_fail
 
   deploy-infrastructure:
