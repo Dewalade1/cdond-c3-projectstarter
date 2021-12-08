@@ -18,7 +18,8 @@ commands:
           when: on_fail
           command: |
             # Your code here
-            aws cloudformation delete-stack --stack-name "${AWS_CLOUDFORMATION_STACK_NAME}"
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} &&\
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
           environment:
             AWS_CLOUDFORMATION_STACK_NAME: <<parameters.stack-name>>
 
@@ -227,14 +228,14 @@ jobs:
   deploy-infrastructure:
     docker:
       # Docker image here that supports AWS CLI
-      - image: amazon/aws-cli
+      # - image: amazon/aws-cli
       - image: circleci/node:13.8.0
 
     parameters:
       stack-id:
-        default: $CIRCLE_WORKFLOW_ID:0:7
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
         description: Name of the stack to be destroyed
-        type: string
+        type: env_field_value
 
     steps:
       # Checkout code from git
