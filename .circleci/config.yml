@@ -19,9 +19,8 @@ commands:
           command: |
             # Your code here
             aws cloudformation delete-stack --stack-name "${AWS_CLOUDFORMATION_STACK_NAME}"
-    
-    environment:
-      AWS_CLOUDFORMATION_STACK_NAME: <<parameters.stack-name>>
+          environment:
+            AWS_CLOUDFORMATION_STACK_NAME: <<parameters.stack-name>>
 
   fix_severe_security_vulnerabilities:
     description: Fixes node modules with critical security vulnerabilities in the application
@@ -229,6 +228,13 @@ jobs:
     docker:
       # Docker image here that supports AWS CLI
       - image: amazon/aws-cli
+
+    parameters:
+      stack-name:
+        default: ""
+        description: Name of the stack to be destroyed
+        type: string 
+
     steps:
       # Checkout code from git
       - checkout
@@ -265,10 +271,10 @@ jobs:
           command: |
             echo "[Error] Failed to add backend ip to ansible inventory!!"
           when: on_fail
+       
       - destroy-environment:
           stack-name: <<parameters.stack-name>>
-          when: on_fail
-
+          
       - run:
           name: Successfully added backend ip to ansible inventory
           command: |
