@@ -185,12 +185,14 @@ jobs:
             npm i &&\
             npm install oauth-sign@^0.9.0 &&\
             npm audit --audit-level=critical
+
       - run:
           name: Frontend Scan Failed
           command: |
             echo "[Error] frontend scan failed." &&\
               echo "[Error] attempting to fix security vulnerabilities"
           when: on_fail
+
       - run:
           name: Fix severe security vulnerabilities
           command: fix_severe_security_vulnerabilities
@@ -434,21 +436,49 @@ jobs:
       - image: amazon/aws-cli
     steps:
       # Checkout code from git
+      - checkout
+
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Install dependencies
           command: |
             # your code here
+            cd frontend
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            yum -y install nodejs
+            yum -y install tar
+            yum -y install gzip
+
       - run:
           name: Get backend url
           command: |
             # your code here
+            export BACKEND_IP=$(aws ec2 describe-instances --query "Reservations[*].Instances[*].PublicIpAddress" --output=text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure      
+            cd frontend
+            npm i
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+      # Here's where you will add some code to rollback on failure 
+      - run:
+          name: Failed to deploy frontend
+          command: |
+            echo "[Error] Failed to deploy frontend!!"
+          when: on_fail 
+      
+      - destroy-environment
+      - revert-migrations:
+          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}        
                     
   deploy-backend:
     docker:
@@ -456,6 +486,8 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
+      - checkout
+      
       # Add ssh keys with fingerprint
       # attach workspace
       - run:
