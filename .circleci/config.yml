@@ -273,7 +273,7 @@ jobs:
           when: on_fail
        
       - destroy-environment:
-          stack-name: <<parameters.stack-name>>
+          stack-name: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
           
       - run:
           name: Successfully added backend ip to ansible inventory
@@ -284,10 +284,12 @@ jobs:
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
           event: fail
+          template: basic_fail_1
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
           event: pass
+          template: basic_fail_1
 
       - persist_to_workspace:
           root: ~/
