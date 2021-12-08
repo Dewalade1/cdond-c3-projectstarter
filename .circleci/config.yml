@@ -68,7 +68,7 @@ commands:
             if(( $SUCCESS==1 )); 
             then
               cd ~/project/backend
-              npm install
+              npm i
             # Add revert code here. You can find this in the Getting Started section.
               npm run migration:revert
             fi
@@ -357,17 +357,17 @@ jobs:
       - run:
           name: prepare environment for backend build
           command: |
-            echo "Preparing environment for backend build"
-            echo ENVIRONMENT=$ENVIRONMENT >> backend/.env
-            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
-            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
-            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
-            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
             echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
             echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
+            echo "Preparing environment for backend build"
+            echo ENVIRONMENT=$ENVIRONMENT >> backend/.env
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
 
       - run:
           name: Install environment dependencies
@@ -376,20 +376,26 @@ jobs:
             sudo apt install -y awscli
 
       - run:
-          name: Run migrations
+          name: Install Migration Dependencies
           command: |
-            # Your code here
-            cd backend &&\
+            cd backend
             npm i
             npm i typescript
             npm --update i python3 npm
+
+      - run:
+          name: Run migrations
+          working_directory: ./backend
+          command: |
+            # Your code here
             npm run build
-            # npm run migrations:revert
+            npm run migrations:revert
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
 
       - run:
           name: Send migration results to memstash
+          working_directory: ./backend
           command: |
             # Your code here
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
@@ -407,17 +413,19 @@ jobs:
 
       # Here's where you will add some code to rollback on failure 
       - run:
-           name: Failed to run migrations
-           command: |
-             echo "[Error] Failed to run migrations!!"
-           when: on_fail 
+          name: Failed to run migrations
+          command: |
+            echo "[Error] Failed to run migrations!!"
+          when: on_fail 
       
       - destroy-environment
+      - revert-migrations:
+          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-      # - slack/notify:
-      #     channel: circle-ci-cloud-eng-aws-project
-      #     event: fail
-      #     template: basic_fail_1     
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1     
 
   deploy-frontend:
     docker:
