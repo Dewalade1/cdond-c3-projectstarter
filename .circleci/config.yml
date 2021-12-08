@@ -265,15 +265,6 @@ jobs:
               aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text >> inventory.txt
-      
-      - run:
-          name: Failed to add backend ip to ansible inventory
-          command: |
-            echo "[Error] Failed to add backend ip to ansible inventory!!"
-          when: on_fail
-       
-      - destroy-environment:
-          stack-name: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
           
       - run:
           name: Successfully added backend ip to ansible inventory
@@ -281,21 +272,30 @@ jobs:
             echo "[Success] Successfully added backend ip to ansible inventory!!"
           when: on_success
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
           event: pass
           template: basic_fail_1
 
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure      
+      # Here's where you will add some code to rollback on failure  
+      - run:
+          name: Failed to add backend ip to ansible inventory
+          command: |
+            echo "[Error] Failed to add backend ip to ansible inventory!!"
+          when: on_fail
+       
+      - destroy-environment:
+          stack-name: !Sub udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
+
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1  
 
   configure-infrastructure:
     docker:
