@@ -311,8 +311,7 @@ jobs:
       - checkout
       # Add ssh keys with fingerprint
       - add_ssh_keys:
-              # You can get this ID in the section where you registered the SSH Key
-              fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"] 
+          fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"] 
       # attach workspace
       - attach_workspace:
           at: ~/
@@ -354,22 +353,23 @@ jobs:
       # Checkout code from git
       - checkout
 
-      - restore_cache:
-          keys: [ backend-build ]
-      - run:
-          name: prepare environment for backend build
-          command: |
-            echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
-            echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
-            echo "Preparing environment for backend build"
-            echo ENVIRONMENT=$ENVIRONMENT >> backend/.env
-            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
-            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
-            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
-            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
+      # - restore_cache:
+      #     keys: [ backend-build ]
+
+      # - run:
+      #     name: prepare environment for backend build
+      #     command: |
+      #       echo TYPEORM_HOST=$TYPEORM_HOST >> backend/.env
+      #       echo TYPEORM_PORT=$TYPEORM_PORT >> backend/.env
+      #       echo "Preparing environment for backend build"
+      #       echo ENVIRONMENT=$ENVIRONMENT >> backend/.env
+      #       echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> backend/.env
+      #       echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> backend/.env
+      #       echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> backend/.env
+      #       echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> backend/.env
+      #       echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> backend/.env
+      #       echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> backend/.env
+      #       echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> backend/.env
 
       - run:
           name: Install environment dependencies
@@ -395,6 +395,7 @@ jobs:
             npm install
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
+          no_output_timeout: 30m
 
       - run:
           name: Send migration results to memstash
@@ -469,6 +470,7 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+
       # Here's where you will add some code to rollback on failure 
       - run:
           name: Failed to deploy frontend
@@ -487,9 +489,15 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-      
+
       # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"] 
+
       # attach workspace
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Install dependencies
           command: |
@@ -498,7 +506,28 @@ jobs:
           name: Deploy backend
           command: |
             # your code here
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+
       # Here's where you will add some code to rollback on failure  
+      - run:
+          name: Failed to deploy backend
+          command: |
+            echo "[Error] Failed to deploy backend!!"
+          when: on_fail 
+      
+      - destroy-environment
+      - revert-migrations:
+          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}     
+
 
   smoke-test:
     docker:
