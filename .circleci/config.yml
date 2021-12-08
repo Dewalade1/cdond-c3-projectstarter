@@ -233,7 +233,7 @@ jobs:
       stack-id:
         default: ${CIRCLE_WORKFLOW_ID:0:7}
         description: Name of the stack to be destroyed
-        type: String
+        type: string
 
     steps:
       # Checkout code from git
