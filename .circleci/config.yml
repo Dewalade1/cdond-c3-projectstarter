@@ -230,10 +230,10 @@ jobs:
       - image: amazon/aws-cli
 
     parameters:
-      stack-name:
-        default: name
+      stack-id:
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
         description: Name of the stack to be destroyed
-        type: env_var_name
+        type: String
 
     steps:
       # Checkout code from git
@@ -290,7 +290,7 @@ jobs:
           when: on_fail
        
       - destroy-environment:
-          stack-name: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
+          stack-name: udapeople-backend-<<parameters.stack-id>>  
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
