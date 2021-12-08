@@ -382,9 +382,9 @@ jobs:
             cd backend &&\
             npm i
             npm i typescript
-            npm --update install python3 npm
+            npm --update i python3 npm
             npm run build
-            npm run migrations:revert
+            # npm run migrations:revert
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
 
