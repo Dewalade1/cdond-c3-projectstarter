@@ -1,6 +1,7 @@
 version: 2.1
 
 orbs: 
+  node: circleci/node:4.1
   slack: circleci/slack@4.5.0
 
 commands:
@@ -228,10 +229,11 @@ jobs:
     docker:
       # Docker image here that supports AWS CLI
       - image: amazon/aws-cli
+      - image: circleci/node:13.8.0
 
     parameters:
       stack-id:
-        default: ${CIRCLE_WORKFLOW_ID:0:7}
+        default: $CIRCLE_WORKFLOW_ID:0:7
         description: Name of the stack to be destroyed
         type: string
 
@@ -266,16 +268,16 @@ jobs:
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text >> inventory.txt
           
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+
       - run:
           name: Successfully added backend ip to ansible inventory
           command: |
             echo "[Success] Successfully added backend ip to ansible inventory!!"
           when: on_success
-
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
 
       # - slack/notify:
       #     channel: circle-ci-cloud-eng-aws-project
@@ -290,7 +292,10 @@ jobs:
           when: on_fail
        
       - destroy-environment:
-          stack-name: udapeople-backend-<<parameters.stack-id>>  
+          stack-name: udapeople-backend-<<parameters.stack-id>>
+
+      - destroy-environment:
+          stack-name: udapeople-frontend-<<parameters.stack-id>>  
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
