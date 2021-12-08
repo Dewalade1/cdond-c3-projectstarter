@@ -232,10 +232,10 @@ jobs:
       - image: circleci/node:13.8.0
 
     parameters:
-      stack-id:
-        default: ${CIRCLE_WORKFLOW_ID:0:7}
-        description: Name of the stack to be destroyed
-        type: env_field_value
+      # stack-id:
+      #   default: $CIRCLE_WORKFLOW_ID:0:7
+      #   description: Name of the stack to be destroyed
+      #   type: env_var_name
 
     steps:
       # Checkout code from git
@@ -291,11 +291,11 @@ jobs:
             echo "[Error] Failed to add backend ip to ansible inventory!!"
           when: on_fail
        
-      - destroy-environment:
-          stack-name: udapeople-backend-<<parameters.stack-id>>
+      - destroy-environment
+          # stack-name: udapeople-backend-<<parameters.stack-id>>
 
-      - destroy-environment:
-          stack-name: udapeople-frontend-<<parameters.stack-id>>  
+      - destroy-environment
+          # stack-name: udapeople-frontend-<<parameters.stack-id>>  
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
