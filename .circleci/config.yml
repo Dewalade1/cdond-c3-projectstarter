@@ -347,13 +347,13 @@ jobs:
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
-      - image: circleci/node:13.8.0
+      - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
       - checkout
 
-      - restore_cache:
-          keys: [backend-build]
+      - attach_workspace:
+          at: ~/
       - run:
           name: prepare environment for backend build
           command: |
@@ -372,23 +372,26 @@ jobs:
       - run:
           name: Install environment dependencies
           command: |
-            sudo apt update
-            sudo apt install -y awscli
+            apk update
+            apk upgrade
+            apk add unzip 
+            apk add curl
+            apk add --update nodejs nodejs-npm
+            /usr/local/bin/python -m pip install --upgrade pip  
 
       - run:
-          name: Install Migration Dependencies
+          name: Install AWSCLI
           command: |
-            cd backend
-            npm i
-            npm i typescript
-            npm --update i python3 npm
+            pip install awscli --upgrade
+            aws --version
 
       - run:
           name: Run migrations
           working_directory: ./backend
           command: |
             # Your code here
-            npm run build
+            cd backend
+            npm install
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
 
