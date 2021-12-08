@@ -231,9 +231,9 @@ jobs:
 
     parameters:
       stack-name:
-        default: ""
+        default: name
         description: Name of the stack to be destroyed
-        type: string 
+        type: env_var_name
 
     steps:
       # Checkout code from git
@@ -277,10 +277,10 @@ jobs:
           paths:
             - project/.circleci/ansible/inventory.txt
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: pass
-          template: basic_fail_1
+      # - slack/notify:
+      #     channel: circle-ci-cloud-eng-aws-project
+      #     event: pass
+      #     template: basic_fail_1
 
       # Here's where you will add some code to rollback on failure  
       - run:
@@ -290,7 +290,7 @@ jobs:
           when: on_fail
        
       - destroy-environment:
-          stack-name: !Sub udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
+          stack-name: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}  
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
