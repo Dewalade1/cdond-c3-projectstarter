@@ -6,8 +6,11 @@ orbs:
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-    # parameters:
-      # Add parameter here   
+    parameters:
+      stack-name:
+        default: ""
+        description: Name of the stack to be destroyed
+        type: string   
 
     steps:
       - run:
@@ -15,7 +18,10 @@ commands:
           when: on_fail
           command: |
             # Your code here
-            exit 1
+            aws cloudformation delete-stack --stack-name "${AWS_CLOUDFORMATION_STACK_NAME}"
+    
+    environment:
+      AWS_CLOUDFORMATION_STACK_NAME: <<parameters.stack-name>>
 
   fix_severe_security_vulnerabilities:
     description: Fixes node modules with critical security vulnerabilities in the application
@@ -179,8 +185,8 @@ jobs:
       - run:
           name: Frontend Scan Failed
           command: |
-            echo "[X] frontend scan failed." &&\
-              echo "[X] attempting to fix security vulnerabilities"
+            echo "[Error] frontend scan failed." &&\
+              echo "[Error] attempting to fix security vulnerabilities"
           when: on_fail
       - run:
           name: Fix severe security vulnerabilities
@@ -211,8 +217,8 @@ jobs:
       - run:
           name: Backend Scan Failed
           command: |
-            echo "[X] backend scan failed." &&\
-              echo "[X] attempting to fix security vulnerabilities"
+            echo "[Error] backend scan failed." &&\
+              echo "[Error] attempting to fix security vulnerabilities"
           when: on_fail
       - run:
           name: Fix severe security vulnerabilities
@@ -225,37 +231,57 @@ jobs:
       - image: amazon/aws-cli
     steps:
       # Checkout code from git
+      - checkout
+
       - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              #--tags project=your-tag \
-              # --stack-name "your back-end stack name with workflow id" \
-              # --parameter-overrides ID="your workflow id"  
-              exit 1
+              --tags project=udaPeople-project \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+
       - run:
           name: Ensure front-end infrastructure exist
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              #--tags project=your-tag \
-              # --stack-name "your front-end stack name with workflow id" \
-              # --parameter-overrides ID="your workflow id"  
-              exit 1
+              --tags project=udaPeople-project \
+              --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+
       - run:
-          name: Add back-end ip to ansible inventory
+          name: Add backend ip to ansible inventory
           command: |
-            # Your code here
-            exit 1
+            touch ~/inventory.txt &&\
+              echo [all] > ~/inventory.txt &&\
+              aws ec2 describe-instances \
+                --query 'Reservations[*].Instances[*].PublicIpAddress' \
+                --output text >> inventory.txt
+      
+      - run:
+          name: Failed to add backend ip to ansible inventory
+          command: |
+            echo "[Error] Failed to add backend ip to ansible inventory!!"
+          when: on_fail
+      - destroy-environment:
+          stack-name: <<parameters.stack-name>>
+          when: on_fail
+
+      - run:
+          name: Successfully added backend ip to ansible inventory
+          command: |
+            echo "[Success] Successfully added backend ip to ansible inventory!!"
+          when: on_success
+
       - slack/notify:
-          channel: 'circle-ci-cloud-eng-aws-project, circle-ci-cloud-eng-aws-project-pub'
+          channel: circle-ci-cloud-eng-aws-project
           event: fail
-          template: basic_fail_1
+
       - slack/notify:
-          channel: 'circle-ci-cloud-eng-aws-project, circle-ci-cloud-eng-aws-project-pub'
+          channel: circle-ci-cloud-eng-aws-project
           event: pass
-          template: basic_fail_1
 
       - persist_to_workspace:
           root: ~/
@@ -418,7 +444,7 @@ workflows:
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           context:
-            - CebTech PLC Trainee Slack Integration # Multiple contexts can be specified
+            # Multiple contexts can be specified
             - CebTech-PLC-Trainee-Slack-Integration
           filters:
             branches:
