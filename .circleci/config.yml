@@ -19,7 +19,7 @@ commands:
           command: |
             # Your code here
             aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} &&\
-            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+              aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
           environment:
             AWS_CLOUDFORMATION_STACK_NAME: <<parameters.stack-name>>
 
@@ -228,10 +228,9 @@ jobs:
   deploy-infrastructure:
     docker:
       # Docker image here that supports AWS CLI
-      # - image: amazon/aws-cli
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
 
-    parameters:
+    # parameters:
       # stack-id:
       #   default: $CIRCLE_WORKFLOW_ID:0:7
       #   description: Name of the stack to be destroyed
@@ -267,6 +266,10 @@ jobs:
               aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text >> inventory.txt
+
+      - run: 
+          name: Install required dependency
+          command: yum install -y tar gzip
           
       - persist_to_workspace:
           root: ~/
@@ -279,10 +282,10 @@ jobs:
             echo "[Success] Successfully added backend ip to ansible inventory!!"
           when: on_success
 
-      # - slack/notify:
-      #     channel: circle-ci-cloud-eng-aws-project
-      #     event: pass
-      #     template: basic_fail_1
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: pass
+          template: basic_pass_1
 
       # Here's where you will add some code to rollback on failure  
       - run:
@@ -292,10 +295,7 @@ jobs:
           when: on_fail
        
       - destroy-environment
-          # stack-name: udapeople-backend-<<parameters.stack-id>>
-
-      - destroy-environment
-          # stack-name: udapeople-frontend-<<parameters.stack-id>>  
+          # stack-name: udapeople-backend-<<parameters.stack-id>> 
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
@@ -308,19 +308,36 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
+      - checkout
       # Add ssh keys with fingerprint
+      - add_ssh_keys:
+              # You can get this ID in the section where you registered the SSH Key
+              fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"] 
       # attach workspace
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Install dependencies
           command: |
             # Your code here
-            exit 1
+            apk add --upgrade tar gzip awscli
+
       - run:
           name: Configure server
           command: |
             # Your code here
-            exit 1
-      # Here's where you will add some code to rollback on failure      
+            apk add --update ansible &&\
+            cd .circleci/ansible &&\
+            ansible-playbook -i inventory.txt configure-server.yml
+      # Here's where you will add some code to rollback on failure 
+      - run:
+          name: Failed to configure infrastructure
+          command: |
+            echo "[Error] Failed to configure infrastructure!!"
+          when: on_fail
+      
+      - destroy-environment     
 
   run-migrations:
     docker:
@@ -328,6 +345,7 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
+      - checkout
       - run:
           name: Run migrations
           command: |
@@ -418,7 +436,8 @@ jobs:
           name: Update cloudfront distribution
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure  
+      # Here's where you will add some code to rollback on failure 
+
 
   cleanup:
       docker:
