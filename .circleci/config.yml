@@ -348,6 +348,10 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
+
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Run migrations
           command: |
@@ -355,6 +359,7 @@ jobs:
             cd backend &&\
             npm i &&\
             npm run migrations > migrations_dump.txt
+            
       - run:
           name: Send migration results to memstash
           command: |
@@ -368,9 +373,7 @@ jobs:
            name: Failed to run migrations
            command: |
              echo "[Error] Failed to run migrations!!"
-           when: on_fail
-
-      - destroy-environment   
+           when: on_fail 
 
       # - slack/notify:
       #     channel: circle-ci-cloud-eng-aws-project
