@@ -376,17 +376,13 @@ jobs:
             sudo apt install -y awscli
 
       - run:
-          name: Install backend dependencies
+          name: Run migrations
           command: |
+            # Your code here
             cd backend &&\
             npm i
             npm i typescript
             npm --update install python3 npm
-
-      - run:
-          name: Run migrations
-          command: |
-            # Your code here
             npm run build
             npm run migrations:revert
             npm run migrations > migrations_dump.txt
@@ -400,7 +396,7 @@ jobs:
               then
               curl -H "Content-Type: text/plain" -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" &&\
                 --request PUT &&\
-                --data "8" migration_${CIRCLE_WORKFLOW_ID:0:7} &&\
+                --data "1" migration_${CIRCLE_WORKFLOW_ID:0:7} &&\
                 echo "[Success] Database migration was successful, Memstash has been updated"
               fi
 
