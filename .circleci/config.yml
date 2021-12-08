@@ -282,10 +282,10 @@ jobs:
             echo "[Success] Successfully added backend ip to ansible inventory!!"
           when: on_success
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: pass
-          template: basic_fail_1
+      # - slack/notify:
+      #     channel: circle-ci-cloud-eng-aws-project
+      #     event: pass
+      #     template: basic_fail_1
 
       # Here's where you will add some code to rollback on failure  
       - run:
