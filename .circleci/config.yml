@@ -316,7 +316,6 @@ jobs:
           name: Install dependencies
           command: |
             # Your code here
-            apk add --update awscli &&\
             apk add --update tar &&\
             apk add --update gzip 
 
