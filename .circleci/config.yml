@@ -285,7 +285,7 @@ jobs:
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
           event: pass
-          template: basic_pass_1
+          template: basic_fail_1
 
       # Here's where you will add some code to rollback on failure  
       - run:
