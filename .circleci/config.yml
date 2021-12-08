@@ -10,7 +10,7 @@ commands:
       stack-name:
         default: ""
         description: Name of the stack to be destroyed
-        type: string   
+        type: string
 
     steps:
       - run:
@@ -54,9 +54,9 @@ commands:
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter here 
+      # Add parameter here
       pipeline_id:
-        type: string 
+        type: string
 
     steps:
       - run:
@@ -72,7 +72,7 @@ commands:
             # Add revert code here. You can find this in the Getting Started section.
               npm run migration:revert
             fi
-            
+
 jobs:
   build-frontend:
     docker:
@@ -123,7 +123,7 @@ jobs:
 
       # Restore from cache
       - restore_cache:
-         keys: [frontend-test]
+          keys: [frontend-test]
 
       # Your job code here
       - run:
@@ -137,7 +137,7 @@ jobs:
           name: Frontend Test Failed
           command: echo "[X] Failed to complete frontend test"
           when: on_fail
-                
+
   test-backend:
     docker:
       # Docker image here
@@ -148,7 +148,7 @@ jobs:
 
       # Restore from cache
       - restore_cache:
-         keys: [backend-test]
+          keys: [backend-test]
 
       # Your job code here
       - run:
@@ -163,7 +163,7 @@ jobs:
           name: Backend Test Failed
           command: echo "[X] Failed to complete backend test"
           when: on_fail
-            
+
   scan-frontend:
     docker:
       # Docker image here
@@ -174,7 +174,7 @@ jobs:
 
       # Restore from cache
       - restore_cache:
-         keys: [frontend-scan]
+          keys: [frontend-scan]
 
       # Your job code here
       - run:
@@ -208,7 +208,7 @@ jobs:
 
       # Restore from cache
       - restore_cache:
-         keys: [backend-scan]
+          keys: [backend-scan]
 
       # Your job code here
       - run:
@@ -236,10 +236,10 @@ jobs:
       - image: amazon/aws-cli
 
     # parameters:
-      # stack-id:
-      #   default: $CIRCLE_WORKFLOW_ID:0:7
-      #   description: Name of the stack to be destroyed
-      #   type: env_var_name
+    # stack-id:
+    #   default: $CIRCLE_WORKFLOW_ID:0:7
+    #   description: Name of the stack to be destroyed
+    #   type: env_var_name
 
     steps:
       # Checkout code from git
@@ -272,10 +272,10 @@ jobs:
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
                 --output text >> inventory.txt
 
-      - run: 
+      - run:
           name: Install required dependency
           command: yum install -y tar gzip
-          
+
       - persist_to_workspace:
           root: ~/
           paths:
@@ -287,20 +287,20 @@ jobs:
             echo "[Success] Successfully added backend ip to ansible inventory!!"
           when: on_success
 
-      # Here's where you will add some code to rollback on failure  
+      # Here's where you will add some code to rollback on failure
       - run:
           name: Failed to add backend ip to ansible inventory
           command: |
             echo "[Error] Failed to add backend ip to ansible inventory!!"
           when: on_fail
-       
+
       - destroy-environment
-          # stack-name: udapeople-backend-<<parameters.stack-id>> 
+        # stack-name: udapeople-backend-<<parameters.stack-id>>
 
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
           event: fail
-          template: basic_fail_1  
+          template: basic_fail_1
 
   configure-infrastructure:
     docker:
@@ -311,7 +311,7 @@ jobs:
       - checkout
       # Add ssh keys with fingerprint
       - add_ssh_keys:
-          fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"] 
+          fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"]
       # attach workspace
       - attach_workspace:
           at: ~/
@@ -321,7 +321,7 @@ jobs:
           command: |
             # Your code here
             apk add --update tar &&\
-            apk add --update gzip 
+            apk add --update gzip
 
       - run:
           name: Configure server
@@ -330,15 +330,14 @@ jobs:
             apk add --update ansible &&\
             cd .circleci/ansible &&\
             ansible-playbook -i inventory.txt configure-server.yml
-      # Here's where you will add some code to rollback on failure 
-      
+      # Here's where you will add some code to rollback on failure
       - run:
           name: Failed to configure infrastructure
           command: |
             echo "[Error] Failed to configure infrastructure!!"
           when: on_fail
-      
-      - destroy-environment   
+
+      - destroy-environment
 
       # - slack/notify:
       #     channel: circle-ci-cloud-eng-aws-project
@@ -379,7 +378,7 @@ jobs:
             apk add unzip 
             apk add curl
             apk add --update nodejs nodejs-npm
-            /usr/local/bin/python -m pip install --upgrade pip  
+            /usr/local/bin/python -m pip install --upgrade pip
 
       - run:
           name: Install AWSCLI
@@ -403,25 +402,23 @@ jobs:
           command: |
             # Your code here
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
-              then
-              curl -H "Content-Type: text/plain" -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" &&\
-                --request PUT &&\
-                --data "1" migration_${CIRCLE_WORKFLOW_ID:0:7} &&\
-                echo "[Success] Database migration was successful, Memstash has been updated"
-              fi
+            then
+              curl -H "Content-Type: text/plain" -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" --request PUT --data "1" migration_${CIRCLE_WORKFLOW_ID:0:7}
+              echo "[Success] Database migration was successful, Memstash.io stash has been updated"
+            fi
 
       - persist_to_workspace:
           root: ~/project
           paths:
             - backend
 
-      # Here's where you will add some code to rollback on failure 
+      # Here's where you will add some code to rollback on failure
       - run:
           name: Failed to run migrations
           command: |
             echo "[Error] Failed to run migrations!!"
-          when: on_fail 
-      
+          when: on_fail
+
       - destroy-environment
       - revert-migrations:
           pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -429,7 +426,7 @@ jobs:
       - slack/notify:
           channel: circle-ci-cloud-eng-aws-project
           event: fail
-          template: basic_fail_1     
+          template: basic_fail_1
 
   deploy-frontend:
     docker:
@@ -471,17 +468,17 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
-      # Here's where you will add some code to rollback on failure 
+      # Here's where you will add some code to rollback on failure
       - run:
           name: Failed to deploy frontend
           command: |
             echo "[Error] Failed to deploy frontend!!"
-          when: on_fail 
-      
+          when: on_fail
+
       - destroy-environment
       - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}        
-                    
+          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
   deploy-backend:
     docker:
       # Docker image here that supports Ansible
@@ -492,7 +489,7 @@ jobs:
 
       # Add ssh keys with fingerprint
       - add_ssh_keys:
-          fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"] 
+          fingerprints: ["ad:ab:a8:85:0c:7a:ec:c5:2d:f0:ea:57:f2:0d:90:12"]
 
       # attach workspace
       - attach_workspace:
@@ -502,6 +499,12 @@ jobs:
           name: Install dependencies
           command: |
             # your code here
+            apk add --update ansible
+            apk add --update nodejs npm
+            apk add --update tar
+            apk add --update gzip
+            apk add --update curl
+            apk add --update openssh-client
       - run:
           name: Deploy backend
           command: |
@@ -517,21 +520,20 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
 
-      # Here's where you will add some code to rollback on failure  
+      # Here's where you will add some code to rollback on failure
       - run:
           name: Failed to deploy backend
           command: |
             echo "[Error] Failed to deploy backend!!"
-          when: on_fail 
-      
+          when: on_fail
+
       - destroy-environment
       - revert-migrations:
-          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}     
-
+          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   smoke-test:
     docker:
-      # Lightweight Docker image 
+      # Lightweight Docker image
       - image: alpine:latest
     steps:
       # Checkout code from git
@@ -551,7 +553,7 @@ jobs:
           name: Frontend smoke test.
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure  
+      # Here's where you will add some code to rollback on failure
 
   cloudfront-update:
     docker:
@@ -567,29 +569,27 @@ jobs:
           name: Update cloudfront distribution
           command: |
             # your code here
-      # Here's where you will add some code to rollback on failure 
-
+      # Here's where you will add some code to rollback on failure
 
   cleanup:
-      docker:
-        # Docker image here
-        - image: circleci/node:13.8.0
-      steps:
-        # Checkout code from git
-        - run:
-            name: Get old stack workflow id
-            command: |
+    docker:
+      # Docker image here
+      - image: circleci/node:13.8.0
+    steps:
+      # Checkout code from git
+      - run:
+          name: Get old stack workflow id
+          command: |
+            # your code here
+            export OldWorkflowID="the id here"
+            export STACKS=[] #put the list of stacks here
+      - run:
+          name: Remove old stacks and files
+          command: |
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
               # your code here
-              export OldWorkflowID="the id here"
-              export STACKS=[] #put the list of stacks here
-        - run:
-            name: Remove old stacks and files
-            command: |
-              if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-              then
-                # your code here
-              fi
-
+            fi
 
 workflows:
   default:
