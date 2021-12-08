@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs: 
+  slack: circleci/slack@4.5.0
+
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -37,6 +40,10 @@ commands:
       - run:
           name: Check if security vulnerability is fixed
           command: npm audit --audit-level=critical
+      - run:
+          name: Fail all security fixes
+          command: echo "[X] Failed to completely fix security vulnerabilities"
+          when: on_fail
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -401,6 +408,8 @@ workflows:
           requires: [build-frontend]
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          context:
+            - CebTech PLC Trainee Slack Integration # Multiple contexts can be specified
           filters:
             branches:
               only: [test-feature-branch]
