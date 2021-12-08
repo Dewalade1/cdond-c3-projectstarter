@@ -436,9 +436,6 @@ jobs:
       # Checkout code from git
       - checkout
 
-      - attach_workspace:
-          at: ~/
-
       - run:
           name: Install dependencies
           command: |
@@ -448,6 +445,9 @@ jobs:
             yum -y install nodejs
             yum -y install tar
             yum -y install gzip
+
+      - attach_workspace:
+          at: ~/
 
       - run:
           name: Get backend url
@@ -615,14 +615,27 @@ jobs:
       - image: amazon/aws-cli
     steps:
       # Checkout code from git
+      - checkout
+
       - run:
           name: Install dependencies
           command: |
             # your code here
+            yum -y install nodejs
+            yum -y install tar
+            yum -y install gzip
+            yum -y install curl
+            
       - run:
           name: Update cloudfront distribution
           command: |
             # your code here
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name ProductionInfraStack \
+              --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
+
       # Here's where you will add some code to rollback on failure
 
   cleanup:
