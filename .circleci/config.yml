@@ -389,7 +389,6 @@ jobs:
           command: |
             # Your code here
             npm run build
-            npm run migrations:revert
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
 
