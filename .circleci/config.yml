@@ -282,11 +282,6 @@ jobs:
             echo "[Success] Successfully added backend ip to ansible inventory!!"
           when: on_success
 
-      # - slack/notify:
-      #     channel: circle-ci-cloud-eng-aws-project
-      #     event: pass
-      #     template: basic_fail_1
-
       # Here's where you will add some code to rollback on failure  
       - run:
           name: Failed to add backend ip to ansible inventory
@@ -321,7 +316,7 @@ jobs:
           name: Install dependencies
           command: |
             # Your code here
-            apk add --upgrade tar gzip awscli
+            apk add awscli tar gzip 
 
       - run:
           name: Configure server
@@ -331,13 +326,19 @@ jobs:
             cd .circleci/ansible &&\
             ansible-playbook -i inventory.txt configure-server.yml
       # Here's where you will add some code to rollback on failure 
+      
       - run:
           name: Failed to configure infrastructure
           command: |
             echo "[Error] Failed to configure infrastructure!!"
           when: on_fail
       
-      - destroy-environment     
+      - destroy-environment   
+
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1    
 
   run-migrations:
     docker:
