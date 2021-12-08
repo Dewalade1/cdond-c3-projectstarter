@@ -428,11 +428,6 @@ jobs:
       - revert-migrations:
           pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
-
   deploy-frontend:
     docker:
       # Docker image here that supports AWS CLI
@@ -539,26 +534,80 @@ jobs:
   smoke-test:
     docker:
       # Lightweight Docker image
-      - image: alpine:latest
+      - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
       - run:
           name: Install dependencies
           command: |
             # your code here
+            apk add --update nodejs npm
+            apk add --update tar
+            apk add --update gzip
+            apk add --update curl
+            apk add --update openssh-client
+
+      - run:
+          name: Install AWSCLI
+          command: |
+            # your code here
+            pip install awscli
+            aws --version
+
       - run:
           name: Get backend url
           command: |
             # your code here
+            export BACKEND_IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:project,Values=udapeople-backend" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              echo "[success] Backend URL: ${API_URL}"
+              return 0
+            else
+              echo "[Error] No response from backend URL"
+              return 1
+            fi
       - run:
           name: Backend smoke test.
           command: |
             # your code here
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+              echo "[success] Backend URL: ${API_URL}"
+              return 0
+            else
+              echo "[Error] No response from backend URL"
+              return 1
+            fi
       - run:
           name: Frontend smoke test.
           command: |
             # your code here
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL} 
+            if curl -s ${URL} | grep "Welcome"
+            then
+              # Change this to 0 after the job fails
+              echo [success] Welcome to Udapeople!!
+              return 0
+            else
+              echo [failed] No response from frontend
+              return 1
+            fi
       # Here's where you will add some code to rollback on failure
+      - run:
+          name: Failed to deploy frontend
+          command: |
+            echo "[Error] Failed to deploy frontend!!"
+          when: on_fail
+
+      - destroy-environment
+      - revert-migrations:
+          pipeline_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   cloudfront-update:
     docker:
