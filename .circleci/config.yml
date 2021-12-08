@@ -352,8 +352,8 @@ jobs:
       # Checkout code from git
       - checkout
 
-      - attach_workspace:
-          at: ~/
+      - restore_cache:
+          keys: [ backend-build ]
       - run:
           name: prepare environment for backend build
           command: |
@@ -387,7 +387,6 @@ jobs:
 
       - run:
           name: Run migrations
-          working_directory: ./backend
           command: |
             # Your code here
             cd backend
