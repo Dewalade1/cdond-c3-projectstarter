@@ -18,8 +18,10 @@ commands:
           when: on_fail
           command: |
             # Your code here
-            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7} &&\
-              aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive &&\
+              aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} &&\
+              aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+          
           environment:
             AWS_CLOUDFORMATION_STACK_NAME: <<parameters.stack-name>>
 
@@ -274,7 +276,7 @@ jobs:
               echo [all] > ~/inventory.txt &&\
               aws ec2 describe-instances \
                 --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                --filters "Name=tag:Name,Values=backend-"${CIRCLE_WORKFLOW_ID:0:7}"" \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --output text >> inventory.txt
 
       - run:
@@ -343,6 +345,11 @@ jobs:
           when: on_fail
 
       - destroy-environment
+
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
 
   run-migrations:
     docker:
@@ -426,6 +433,11 @@ jobs:
       - destroy-environment
       - revert-migrations
 
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
+
   deploy-frontend:
     docker:
       # Docker image here that supports AWS CLI
@@ -453,11 +465,11 @@ jobs:
             # your code here
             export BACKEND_IP=$(\
             aws ec2 describe-instances --query "Reservations[*].Instances[*].PublicIpAddress" \
-            --filters "Name=tag:Name,Values=backend-"${CIRCLE_WORKFLOW_ID:0:7}"" \
-            --output text)
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text)
+            export BACKEND_URL="http://${BACKEND_IP}:3030"
+            echo "${BACKEND_URL}"
+            echo BACKEND_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
           name: Deploy frontend objects
@@ -478,6 +490,11 @@ jobs:
 
       - destroy-environment
       - revert-migrations
+
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
 
   deploy-backend:
     docker:
@@ -530,6 +547,11 @@ jobs:
       - destroy-environment
       - revert-migrations
 
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
+
   smoke-test:
     docker:
       # Lightweight Docker image
@@ -559,33 +581,35 @@ jobs:
             # your code here
             export BACKEND_IP=$(\
             aws ec2 describe-instances \
-            --query "Reservations[*].Instances[*].PublicIpAddress \
-            --filters "Name=tag:Name,Values=backend-"${CIRCLE_WORKFLOW_ID:0:7}"" \
-            --output text")
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text)
+            export BACKEND_URL="http://${BACKEND_IP}:3030"
+            echo "${BACKEND_URL}"
+            if curl "${BACKEND_URL}/api/status" | grep "ok"
             then
-              echo "[success] Backend URL: ${API_URL}"
+              echo "[success] Backend URL: ${BACKEND_URL}"
               return 0
             else
               echo "[Error] No response from backend URL"
               return 1
             fi
+
       - run:
           name: Backend smoke test.
           command: |
             # your code here
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
+            export BACKEND_URL="http://${BACKEND_IP}:3030"
+            echo "${BACKEND_URL}"
+            if curl "${BACKEND_URL}/api/status" | grep "ok"
             then
-              echo "[success] Backend URL: ${API_URL}"
+              echo "[success] Backend URL: ${BACKEND_URL}"
               return 0
             else
               echo "[Error] No response from backend URL"
               return 1
             fi
+
       - run:
           name: Frontend smoke test.
           command: |
@@ -610,6 +634,11 @@ jobs:
 
       - destroy-environment
       - revert-migrations
+
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
 
   cloudfront-update:
     docker:
@@ -647,6 +676,11 @@ jobs:
       - destroy-environment
       - revert-migrations
 
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
+
   cleanup:
     docker:
       # Docker image here
@@ -682,6 +716,11 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
               aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
             fi
+      
+      - slack/notify:
+          channel: circle-ci-cloud-eng-aws-project
+          event: fail
+          template: basic_fail_1
 
 workflows:
   default:
@@ -706,15 +745,29 @@ workflows:
               only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
       - run-migrations:
           requires: [configure-infrastructure]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
       - deploy-frontend:
           requires: [run-migrations]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
       - deploy-backend:
           requires: [run-migrations]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
       - cloudfront-update:
           requires: [smoke-test]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
       - cleanup:
           requires: [cloudfront-update]
+          context:
+            - CebTech-PLC-Trainee-Slack-Integration
