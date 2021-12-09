@@ -467,9 +467,9 @@ jobs:
             aws ec2 describe-instances --query "Reservations[*].Instances[*].PublicIpAddress" \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
-            export BACKEND_URL="http://${BACKEND_IP}:3030"
-            echo "${BACKEND_URL}"
-            echo BACKEND_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
           name: Deploy frontend objects
@@ -584,11 +584,11 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
-            export BACKEND_URL="http://${BACKEND_IP}:3030"
-            echo "${BACKEND_URL}"
-            if curl "${BACKEND_URL}/api/status" | grep "ok"
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
             then
-              echo "[success] Backend URL: ${BACKEND_URL}"
+              echo "[success] Backend URL: ${API_URL}"
               return 0
             else
               echo "[Error] No response from backend URL"
@@ -599,11 +599,11 @@ jobs:
           name: Backend smoke test.
           command: |
             # your code here
-            export BACKEND_URL="http://${BACKEND_IP}:3030"
-            echo "${BACKEND_URL}"
-            if curl "${BACKEND_URL}/api/status" | grep "ok"
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+            if curl "${API_URL}/api/status" | grep "ok"
             then
-              echo "[success] Backend URL: ${BACKEND_URL}"
+              echo "[success] Backend URL: ${API_URL}"
               return 0
             else
               echo "[Error] No response from backend URL"
