@@ -331,10 +331,6 @@ jobs:
       - destroy-environment
         # stack-name: udapeople-backend-<<parameters.stack-id>>
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
-
   configure-infrastructure:
     docker:
       # Docker image here that supports Ansible
@@ -373,9 +369,9 @@ jobs:
 
       - destroy-environment
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
+      # - notify_slack_on_pass
 
   run-migrations:
     docker:
@@ -455,9 +451,9 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
+      # - notify_slack_on_pass
 
   deploy-frontend:
     docker:
@@ -512,9 +508,8 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
 
   deploy-backend:
     docker:
@@ -567,9 +562,8 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
 
   smoke-test:
     docker:
@@ -649,9 +643,8 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
 
   cloudfront-update:
     docker:
@@ -689,9 +682,8 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
 
   cleanup:
     docker:
@@ -729,9 +721,8 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
             fi
       
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
+      # - trigger_slack_notif
+      # - notify_slack_on_fail
 
 workflows:
   default:
