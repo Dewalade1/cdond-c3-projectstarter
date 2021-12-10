@@ -540,6 +540,7 @@ jobs:
 
       - run:
           name: Deploy backend
+          working_directory: ./
           command: |
             # your code here
             cd backend
@@ -548,7 +549,7 @@ jobs:
             cp package* ./dist
             cd ..
             # Zip the directory
-            tar -C backend -czvf /root/project/artifact.tar.gz .
+            tar -C backend -czvf artifact.tar.gz .
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -561,7 +562,7 @@ jobs:
             echo "[Error] Failed to deploy backend!!"
           when: on_fail
 
-      - destroy-environment
+      # - destroy-environment
       - revert-migrations
 
       # - trigger_slack_notif
@@ -621,7 +622,7 @@ jobs:
               echo "[success] Backend URL: ${API_URL}"
               return 0
             else
-              echo "[Error] No response from backend URL"
+              echo "[Error] Backend Smoke Test Failed"
               return 1
             fi
 
