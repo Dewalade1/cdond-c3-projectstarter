@@ -56,12 +56,6 @@ commands:
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
-    # parameters:
-    #   # Add parameter here
-      
-    #   SUCCESS: 
-    #     type: string 
-    #     default: "1"
 
     steps:
       - run:
@@ -72,13 +66,45 @@ commands:
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
             export SUCCESS=$(curl -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" \
             --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7})
-            if(( ${SUCCESS}=="1" )); 
+            if(( $SUCCESS=="1" )); 
             then
-              cd ~/project/backend
+              cd backend
               npm i
             # Add revert code here. You can find this in the Getting Started section.
               npm run migration:revert
             fi
+
+    trigger_slack_notif:
+      steps:
+        - slack/notify:
+            custom: |
+              {
+                "blocks": [
+                  {
+                    "type": "section",
+                    "fields": [
+                      {
+                        "type": "plain_text",
+                        "text": "*This is a text notification*",
+                        "emoji": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            event: always
+
+    notify_slack_on_pass:
+      steps:
+        - slack/notify:
+            event: fail
+            template: basic_fail_1
+
+    notify_slack_on_fail:
+      steps:
+        - slack/notify:
+            event: pass
+            template: basic_success_1
 
 jobs:
   build-frontend:
@@ -100,6 +126,10 @@ jobs:
           paths: [frontend/node_modules]
           key: frontend-build
 
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
+
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -120,6 +150,10 @@ jobs:
           paths: [backend/node_modules]
           key: backend-build
 
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
+
   test-frontend:
     docker:
       # Docker image here
@@ -131,6 +165,10 @@ jobs:
       # Restore from cache
       - restore_cache:
           keys: [frontend-test]
+
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
       # Your job code here
       - run:
@@ -171,6 +209,10 @@ jobs:
           command: echo "[X] Failed to complete backend test"
           when: on_fail
 
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
+
   scan-frontend:
     docker:
       # Docker image here
@@ -205,6 +247,10 @@ jobs:
           command: fix_severe_security_vulnerabilities
           when: on_fail
 
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
+
   scan-backend:
     docker:
       # Docker image here
@@ -236,6 +282,10 @@ jobs:
           name: Fix severe security vulnerabilities
           command: fix_severe_security_vulnerabilities
           when: on_fail
+
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   deploy-infrastructure:
     docker:
@@ -305,10 +355,9 @@ jobs:
       - destroy-environment
         # stack-name: udapeople-backend-<<parameters.stack-id>>
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   configure-infrastructure:
     docker:
@@ -338,6 +387,7 @@ jobs:
             apk add --update ansible &&\
             cd .circleci/ansible &&\
             ansible-playbook -i inventory.txt configure-server.yml
+
       # Here's where you will add some code to rollback on failure
       - run:
           name: Failed to configure infrastructure
@@ -347,10 +397,9 @@ jobs:
 
       - destroy-environment
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   run-migrations:
     docker:
@@ -420,7 +469,7 @@ jobs:
           paths:
             - backend
 
-      # Here's where you will add some code to rollback on failure
+      # Here's where you will add some code to rollback on failure and slack notification
       - run:
           name: Failed to run migrations
           command: |
@@ -430,10 +479,9 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   deploy-frontend:
     docker:
@@ -488,10 +536,9 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   deploy-backend:
     docker:
@@ -544,10 +591,9 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   smoke-test:
     docker:
@@ -627,6 +673,10 @@ jobs:
       - destroy-environment
       - revert-migrations
 
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
+
   cloudfront-update:
     docker:
       # Docker image here that supports AWS CLI
@@ -663,10 +713,9 @@ jobs:
       - destroy-environment
       - revert-migrations
 
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
   cleanup:
     docker:
@@ -704,10 +753,9 @@ jobs:
               aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
             fi
       
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
+      - trigger_slack_notif
+      - notify_slack_on_fail
+      - notify_slack_on_pass
 
 workflows:
   default:
