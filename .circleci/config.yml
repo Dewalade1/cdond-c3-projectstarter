@@ -64,7 +64,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            export SUCCESS=$(curl -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" \
+            export SUCCESS=$(curl -H "token: 0ca4f5ac-27b9-4529-a5d6-fa70207be8ee" \
             --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $SUCCESS=="1" )); 
             then
@@ -432,7 +432,7 @@ jobs:
             # Your code here
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              curl -H "Content-Type: text/plain" -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" --request PUT --data "1" migration_${CIRCLE_WORKFLOW_ID:0:7}
+              curl -H "Content-Type: text/plain" -H "token: 0ca4f5ac-27b9-4529-a5d6-fa70207be8ee" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
               echo "[Success] Database migration was successful, Memstash.io stash has been updated"
             fi
 
@@ -485,7 +485,7 @@ jobs:
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
+            echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
       - run:
@@ -537,6 +537,7 @@ jobs:
             apk add --update gzip
             apk add --update curl
             apk add --update openssh-client
+
       - run:
           name: Deploy backend
           command: |
@@ -607,8 +608,13 @@ jobs:
           name: Backend smoke test.
           command: |
             # your code here
-            # export API_URL="http://${BACKEND_IP}:3030"
-            # echo "${API_URL}"
+            export BACKEND_IP=$(\
+            aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL=${API_URL}"
             if curl "${API_URL}/api/status" | grep "ok"
             then
               echo "[success] Backend URL: ${API_URL}"
