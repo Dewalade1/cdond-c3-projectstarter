@@ -18,6 +18,7 @@ commands:
           when: on_fail
           command: |
             # Your code here
+            echo "[running] Destroying environment ${CIRCLE_WORKFLOW_ID:0:7}"
             aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive &&\
               aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} &&\
               aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
@@ -55,12 +56,12 @@ commands:
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
-    parameters:
-      # Add parameter here
+    # parameters:
+    #   # Add parameter here
       
-      SUCCESS: 
-        type: string 
-        default: "1"
+    #   SUCCESS: 
+    #     type: string 
+    #     default: "1"
 
     steps:
       - run:
@@ -69,7 +70,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            export SUCCESS = $(curl -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" \
+            SUCCESS=$(curl -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" \
             --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( ${SUCCESS}=="1" )); 
             then
@@ -412,10 +413,6 @@ jobs:
             then
               curl -H "Content-Type: text/plain" -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" --request PUT --data "1" migration_${CIRCLE_WORKFLOW_ID:0:7}
               echo "[Success] Database migration was successful, Memstash.io stash has been updated"
-            else
-              curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-              --request PUT \
-              --data 0 https://api.memstash.io/values/migration_status_${CIRCLE_WORKFLOW_ID} 
             fi
 
       - persist_to_workspace:
@@ -531,7 +528,7 @@ jobs:
             npm run build
             cd ..
             # Zip the directory
-            tar -C backend -czvf artifact.tar.gz .
+            tar -C backend -czvf /artifact.tar.gz .
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -564,6 +561,7 @@ jobs:
             # your code here
             apk add --update nodejs npm
             apk add --update tar
+            apk add --update JQ
             apk add --update gzip
             apk add --update curl
             apk add --update openssh-client
@@ -575,6 +573,9 @@ jobs:
             pip install awscli
             aws --version
 
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Get backend url
           command: |
@@ -585,22 +586,14 @@ jobs:
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            if curl "${API_URL}/api/status" | grep "ok"
-            then
-              echo "[success] Backend URL: ${API_URL}"
-              return 0
-            else
-              echo "[Error] No response from backend URL"
-              return 1
-            fi
+            echo "API URL: ${API_URL}"
 
       - run:
           name: Backend smoke test.
           command: |
             # your code here
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
+            # export API_URL="http://${BACKEND_IP}:3030"
+            # echo "${API_URL}"
             if curl "${API_URL}/api/status" | grep "ok"
             then
               echo "[success] Backend URL: ${API_URL}"

@@ -1,23 +1,49 @@
 ---
+- name: "upgrade packages."
+  become: true
+  apt:
+    upgrade: "yes"
+
+- name: "install dependencies."
+  become: true
+  apt:
+    name: ["nodejs", "npm"]
+    update_cache: yes
+
+
+- name: "install pm2"
+  become: true
+  npm:
+    name: pm2
+    global: yes
+    production: yes
+    state: present
+
+- name: create backend directory
+  become: yes
+  file:
+    path: ~/backend
+    state: directory
+    mode: 0755
+
 - name: copy artifact to remote
   become: true
   copy:
-        src: artifact.tar.gz
-        dest: /home/ubuntu
+        src: ~/project/artifact.tar.gz
+        dest: ~/backend/artifact.tar.gz
 
-- name: Create backend directory
-  file:
-    path: /home/ubuntu/backend
-    state: directory
-
-- name: Extract 'artifact.tar.gz' 
-  ansible.builtin.unarchive:
-    src: artifact.tar.gz
-    dest: /home/ubuntu/backend
+- name: unpack backend files
+  become: yes
+  shell: |
+    cd ~/backend
+    tar -vxf artifact.tar.gz
+    rm -f artifact.tar.gz
 
 - name: Start Backend Application
   shell: |
     npm install
-    cd /home/ubuntu/backend 
-    pm2 stop backend
-    pm2 start npm --name "backend" -- start
+    cd ~/backend 
+    pm2 stop default
+    pm2 start npm -- run start
+    cd dist
+    pm2 start main.js --update-env
