@@ -158,10 +158,6 @@ jobs:
       - restore_cache:
           keys: [frontend-test]
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
-
       # Your job code here
       - run:
           name: Run Frontend Test
