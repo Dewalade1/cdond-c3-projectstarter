@@ -29,15 +29,16 @@
 - name: copy artifact to remote
   become: true
   copy:
-        src: ~/project/artifact.tar.gz
-        dest: ~/backend/artifact.tar.gz
+        src: /root/project/artifact.tar.gz
+        dest: /root/backend
 
 - name: unpack backend files
   become: yes
   shell: |
-    cd ~/backend
     tar -vxf artifact.tar.gz
     rm -f artifact.tar.gz
+  args:
+    chdir: /root/backend
 
 - name: Start Backend Application
   become: yes
