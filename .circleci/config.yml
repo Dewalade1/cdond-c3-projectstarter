@@ -70,7 +70,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$(curl -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" \
+            export SUCCESS=$(curl -H "token: 383fc843-a0e1-4615-8bfb-9bfcdbb66757" \
             --request GET https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( ${SUCCESS}=="1" )); 
             then
@@ -561,7 +561,6 @@ jobs:
             # your code here
             apk add --update nodejs npm
             apk add --update tar
-            apk add --update JQ
             apk add --update gzip
             apk add --update curl
             apk add --update openssh-client
@@ -613,7 +612,7 @@ jobs:
             then
               # Change this to 0 after the job fails
               echo [success] Welcome to Udapeople!!
-              return 0
+              return 1
             else
               echo [failed] No response from frontend
               return 1
@@ -627,11 +626,6 @@ jobs:
 
       - destroy-environment
       - revert-migrations
-
-      - slack/notify:
-          channel: circle-ci-cloud-eng-aws-project
-          event: fail
-          template: basic_fail_1
 
   cloudfront-update:
     docker:
@@ -754,8 +748,6 @@ workflows:
             - CebTech-PLC-Trainee-Slack-Integration
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
-          context:
-            - CebTech-PLC-Trainee-Slack-Integration
       - cloudfront-update:
           requires: [smoke-test]
           context:
