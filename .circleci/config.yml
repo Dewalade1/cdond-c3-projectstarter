@@ -126,10 +126,6 @@ jobs:
           paths: [frontend/node_modules]
           key: frontend-build
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
-
   build-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -149,10 +145,6 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
-
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
 
   test-frontend:
     docker:
@@ -209,10 +201,6 @@ jobs:
           command: echo "[X] Failed to complete backend test"
           when: on_fail
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
-
   scan-frontend:
     docker:
       # Docker image here
@@ -247,10 +235,6 @@ jobs:
           command: fix_severe_security_vulnerabilities
           when: on_fail
 
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
-
   scan-backend:
     docker:
       # Docker image here
@@ -282,11 +266,7 @@ jobs:
           name: Fix severe security vulnerabilities
           command: fix_severe_security_vulnerabilities
           when: on_fail
-
-      - trigger_slack_notif
-      - notify_slack_on_fail
-      - notify_slack_on_pass
-
+          
   deploy-infrastructure:
     docker:
       # Docker image here that supports AWS CLI
